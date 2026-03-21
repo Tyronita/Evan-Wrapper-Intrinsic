@@ -20,11 +20,16 @@ apt install -y \
   wget \
   gpg \
   curl \
-  update-alternatives
+  update-alternatives \
+  software-properties-common \
+  lsb-release
 
 echo "=== Setting default terminal emulator ==="
 update-alternatives --set x-terminal-emulator /usr/bin/xfce4-terminal.wrapper || true
 
+# =========================
+# VS CODE
+# =========================
 echo "=== Installing VS Code ==="
 wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
 install -o root -g root -m 644 microsoft.gpg /usr/share/keyrings/
@@ -33,6 +38,9 @@ apt update
 apt install -y code
 rm microsoft.gpg
 
+# =========================
+# NODE + CLAUDE
+# =========================
 echo "=== Installing Node.js ==="
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt install -y nodejs
@@ -40,6 +48,76 @@ apt install -y nodejs
 echo "=== Installing Claude Code CLI ==="
 npm install -g @anthropic-ai/claude-code --unsafe-perm || true
 
+# =========================
+# PYTHON 3.10 (ROS FIX)
+# =========================
+echo "=== Installing Python 3.10 ==="
+apt install -y python3.10 python3.10-venv python3.10-distutils
+
+# =========================
+# ROS 2 HUMBLE
+# =========================
+echo "=== Installing ROS 2 Humble ==="
+
+add-apt-repository universe -y
+
+curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc \
+  | gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg
+
+echo "deb [signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] \
+http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" \
+> /etc/apt/sources.list.d/ros2.list
+
+apt update
+
+apt install -y \
+  ros-humble-desktop \
+  ros-humble-rclpy \
+  ros-dev-tools
+
+# =========================
+# FORCE PYTHON 3.10 FOR ROS
+# =========================
+echo "=== Fixing ROS Python mismatch ==="
+
+echo 'export PYTHONPATH=/opt/ros/humble/lib/python3.10/site-packages' >> ~/.bashrc
+echo 'export LD_LIBRARY_PATH=/opt/ros/humble/lib:$LD_LIBRARY_PATH' >> ~/.bashrc
+echo 'export PATH=/usr/bin/python3.10:$PATH' >> ~/.bashrc
+
+# =========================
+# GAZEBO
+# =========================
+echo "=== Installing Gazebo ==="
+
+apt install -y \
+  gazebo \
+  ros-humble-gazebo-ros-pkgs
+
+# =========================
+# MUJOCO
+# =========================
+echo "=== Installing MuJoCo ==="
+
+apt install -y libglfw3 libglew2.2 libosmesa6
+pip install mujoco
+
+# =========================
+# RENDERING / OPENGL
+# =========================
+echo "=== Installing OpenGL dependencies ==="
+
+apt install -y \
+  mesa-utils \
+  libgl1-mesa-dri \
+  libgl1-mesa-glx \
+  libegl1 \
+  libxrender1 \
+  libxext6 \
+  libsm6
+
+# =========================
+# VNC SETUP
+# =========================
 echo "=== Initializing VNC (set password when prompted) ==="
 vncserver || true
 
@@ -64,10 +142,18 @@ vncserver :1 -geometry 1920x1080 -depth 24
 echo "=== Verifying VNC is listening ==="
 ss -tulpn | grep 5901 || true
 
+# =========================
+# FINAL TEST
+# =========================
+echo "=== Testing ROS ==="
+source /opt/ros/humble/setup.bash
+python3.10 -c "import rclpy; print('ROS OK')"
+
 echo "=== Setup complete ==="
 echo ""
 echo "Next steps:"
-echo "- Ensure RunPod maps internal port 5901"
-echo "- Connect using: <external_ip>:<external_port>"
-echo "- Launch VS Code with: code --no-sandbox --user-data-dir=/root/.vscode"
-echo "- Run Claude with: claude"
+echo "- Connect VNC: <ip>:5901"
+echo "- Run: source /opt/ros/humble/setup.bash"
+echo "- Test: ros2 --help"
+echo "- Launch Gazebo: gazebo"
+echo "- Launch RViz: rviz2"
