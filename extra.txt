@@ -1,0 +1,13 @@
+Runpod L4 GPU
+Add GPU
+Add PORT 5901 under direct TCP connections on Edit Pod
+Direct connect for setup and run this script
+
+chmod +x setup_vnc.sh
+./setup_vnc.sh
+
+connect via RealVNC Viewer
+<your-runpod-ip>:<external-port> -- the port that is linked to 5901
+
+Click remove on 
+'“Power Manager Plugin unexpectedly left the panel”'
