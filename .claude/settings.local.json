@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(MSYS_NO_PATHCONV=1 wsl -d Ubuntu -u root -- bash -c 'docker logs aic_eval 2>&1 | tail -30' 2>&1)"
+    ]
+  }
+}
